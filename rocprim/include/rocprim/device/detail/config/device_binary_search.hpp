@@ -2303,6 +2303,120 @@ struct default_binary_search_config<
     : binary_search_config<256, 4>
 {};
 
+// Based on value_type = double, output_type = int64_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4) && (sizeof(output_type) <= 8) && (sizeof(output_type) > 4))>> :
+binary_search_config<64, 16> { };
+
+// Based on value_type = double, output_type = int
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4) && (sizeof(output_type) <= 4) && (sizeof(output_type) > 2))>> :
+binary_search_config<64, 16> { };
+
+// Based on value_type = double, output_type = short
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4) && (sizeof(output_type) <= 2) && (sizeof(output_type) > 1))>> :
+binary_search_config<64, 16> { };
+
+// Based on value_type = double, output_type = int8_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4) && (sizeof(output_type) <= 1))>> :
+binary_search_config<64, 16> { };
+
+// Based on value_type = float, output_type = int64_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 4) && (sizeof(value_type) > 2) && (sizeof(output_type) <= 8) && (sizeof(output_type) > 4))>> :
+binary_search_config<64, 16> { };
+
+// Based on value_type = float, output_type = int
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 4) && (sizeof(value_type) > 2) && (sizeof(output_type) <= 4) && (sizeof(output_type) > 2))>> :
+binary_search_config<64, 16> { };
+
+// Based on value_type = float, output_type = short
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 4) && (sizeof(value_type) > 2) && (sizeof(output_type) <= 2) && (sizeof(output_type) > 1))>> :
+binary_search_config<64, 16> { };
+
+// Based on value_type = float, output_type = int8_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 4) && (sizeof(value_type) > 2) && (sizeof(output_type) <= 1))>> :
+binary_search_config<64, 16> { };
+
+// Based on value_type = rocprim::half, output_type = int64_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 2) && (sizeof(output_type) <= 8) && (sizeof(output_type) > 4))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = rocprim::half, output_type = int
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 2) && (sizeof(output_type) <= 4) && (sizeof(output_type) > 2))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = rocprim::half, output_type = short
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 2) && (sizeof(output_type) <= 2) && (sizeof(output_type) > 1))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = rocprim::half, output_type = int8_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 2) && (sizeof(output_type) <= 1))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = int64_t, output_type = int64_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4) && (sizeof(output_type) <= 8) && (sizeof(output_type) > 4))>> :
+binary_search_config<256, 1> { };
+
+// Based on value_type = int64_t, output_type = int
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4) && (sizeof(output_type) <= 4) && (sizeof(output_type) > 2))>> :
+binary_search_config<256, 1> { };
+
+// Based on value_type = int64_t, output_type = short
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4) && (sizeof(output_type) <= 2) && (sizeof(output_type) > 1))>> :
+binary_search_config<256, 1> { };
+
+// Based on value_type = int64_t, output_type = int8_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4) && (sizeof(output_type) <= 1))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = int, output_type = int64_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 4) && (sizeof(value_type) > 2) && (sizeof(output_type) <= 8) && (sizeof(output_type) > 4))>> :
+binary_search_config<256, 1> { };
+
+// Based on value_type = int, output_type = int
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 4) && (sizeof(value_type) > 2) && (sizeof(output_type) <= 4) && (sizeof(output_type) > 2))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = int, output_type = short
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 4) && (sizeof(value_type) > 2) && (sizeof(output_type) <= 2) && (sizeof(output_type) > 1))>> :
+binary_search_config<256, 1> { };
+
+// Based on value_type = int, output_type = int8_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 4) && (sizeof(value_type) > 2) && (sizeof(output_type) <= 1))>> :
+binary_search_config<256, 1> { };
+
+// Based on value_type = short, output_type = int64_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 2) && (sizeof(value_type) > 1) && (sizeof(output_type) <= 8) && (sizeof(output_type) > 4))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = short, output_type = int
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 2) && (sizeof(value_type) > 1) && (sizeof(output_type) <= 4) && (sizeof(output_type) > 2))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = short, output_type = short
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 2) && (sizeof(value_type) > 1) && (sizeof(output_type) <= 2) && (sizeof(output_type) > 1))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = short, output_type = int8_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 2) && (sizeof(value_type) > 1) && (sizeof(output_type) <= 1))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = int8_t, output_type = int64_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 1) && (sizeof(output_type) <= 8) && (sizeof(output_type) > 4))>> :
+binary_search_config<128, 4> { };
+
+// Based on value_type = int8_t, output_type = int
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 1) && (sizeof(output_type) <= 4) && (sizeof(output_type) > 2))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = int8_t, output_type = short
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 1) && (sizeof(output_type) <= 2) && (sizeof(output_type) > 1))>> :
+binary_search_config<128, 1> { };
+
+// Based on value_type = int8_t, output_type = int8_t
+template<class value_type, class output_type> struct default_binary_search_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(!bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 1) && (sizeof(output_type) <= 1))>> :
+binary_search_config<128, 1> { };
+
+
+
 } // end namespace detail
 
 END_ROCPRIM_NAMESPACE
