@@ -2652,8 +2652,6 @@ struct default_scan_by_key_config<
                          block_scan_algorithm::reduce_then_scan>
 {};
 
-template<unsigned int arch, class key_type, class value_type, class enable = void> struct default_scan_by_key_config :
-default_scan_by_key_config_base<key_type, value_type>::type { };
 
 // Based on key_type = double, value_type = int64_t
 template<class key_type, class value_type> struct default_scan_by_key_config<static_cast<unsigned int>(target_arch::gfx942), key_type, value_type, std::enable_if_t<(bool(rocprim::is_floating_point<key_type>::value) && (sizeof(key_type) <= 8) && (sizeof(key_type) > 4) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4))>> :

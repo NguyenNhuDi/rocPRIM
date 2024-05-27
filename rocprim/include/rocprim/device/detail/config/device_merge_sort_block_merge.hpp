@@ -2677,9 +2677,6 @@ struct default_merge_sort_block_merge_config<
     : merge_sort_block_merge_config<256, 1, (1 << 17) + 70000, 128, 128, 8>
 {};
 
-template<unsigned int arch, class key_type, class value_type = rocprim::empty_type, class enable = void> struct default_merge_sort_block_merge_config :
-merge_sort_block_merge_config_base<key_type, value_type>::type {};
-
 // Based on key_type = double, value_type = custom_type<char,double>
 template<class key_type, class value_type> struct default_merge_sort_block_merge_config<static_cast<unsigned int>(target_arch::gfx942), key_type, value_type, std::enable_if_t<(bool(rocprim::is_floating_point<key_type>::value) && (sizeof(key_type) <= 8) && (sizeof(key_type) > 4) && (sizeof(value_type) <= 16) && (sizeof(value_type) > 8))>> :
 merge_sort_block_merge_config<256, 1, (1 << 17) + 70000, 128, 256, 4> { };

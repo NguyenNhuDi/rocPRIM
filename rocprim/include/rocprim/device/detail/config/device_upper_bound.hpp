@@ -2303,10 +2303,6 @@ struct default_upper_bound_config<
     : upper_bound_config<256, 4>
 {};
 
-template<unsigned int arch, class value_type, class output_type, class enable = void>
-struct default_upper_bound_config : default_binary_search_config_base<value_type, output_type>
-{};
-
 // Based on value_type = double, output_type = int64_t
 template<class value_type, class output_type> struct default_upper_bound_config<static_cast<unsigned int>(target_arch::gfx942), value_type, output_type, std::enable_if_t<(bool(rocprim::is_floating_point<value_type>::value) && (sizeof(value_type) <= 8) && (sizeof(value_type) > 4) && (sizeof(output_type) <= 8) && (sizeof(output_type) > 4))>> :
 upper_bound_config<64, 1> { };
