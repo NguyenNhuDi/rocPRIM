@@ -237,4 +237,45 @@ __global__ __launch_bounds__(BlockSize) void sort_pairs_kernel(key_type* /*keys*
                                                                OffsetT /*size*/)
 {}
 
+template<
+    unsigned int BlockSize,
+    unsigned int ItemsPerThread,
+    class KeyIterator,
+    rocprim::block_sort_algorithm algorithm,
+    class BinaryOp = rocprim::less<typename std::iterator_traits<KeyIterator>::value_type>
+    >
+__global__ __launch_bounds__(BlockSize) void sort_keys_kernel_no_size(KeyIterator keys)
+{
+    using key_type = typename std::iterator_traits<KeyIterator>::value_type;
+    
+    static constexpr const unsigned int ItemsPerBlock = ItemsPerThread * BlockSize;
+    const unsigned int                  block_offset  = blockIdx.x * ItemsPerBlock;
+    const unsigned int                  index         = block_offset + threadIdx.x * ItemsPerThread;
+
+    using bsort_type
+        = rocprim::block_sort<key_type, BlockSize, ItemsPerThread>;
+    ROCPRIM_SHARED_MEMORY typename bsort_type::storage_type storage;
+    
+    if (ItemsPerThread == 1){
+        key_type thread_key = keys[index];
+
+        bsort_type().sort(thread_key,
+                            storage,
+                            BinaryOp());
+
+        keys[index] = thread_key;
+    }
+    else{
+        key_type thread_keys[ItemsPerThread];
+        for(size_t i = 0; i < ItemsPerThread; i++)
+            thread_keys[i] = keys[index + i];
+        
+        bsort_type().sort(thread_keys,
+                            storage,
+                            BinaryOp());
+        for(size_t i = 0; i < ItemsPerThread; i++)
+            keys[index + i] = thread_keys[i];
+    }
+}
+
 #endif // TEST_BLOCK_SORT_KERNELS_HPP_

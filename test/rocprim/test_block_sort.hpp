@@ -333,6 +333,72 @@ void TestSortStableKey(std::vector<size_t> sizes)
         }
     }
 }
+
+template<unsigned int block_size,
+         unsigned int items_per_thread,
+         class key_type,
+         class value_type,
+         rocprim::block_sort_algorithm algo,
+         class binary_op_type>
+void TestSortKeyNoSize()
+{
+    int device_id = test_common_utils::obtain_device_from_ctest();
+    SCOPED_TRACE(testing::Message() << "with device_id = " << device_id);
+    HIP_CHECK(hipSetDevice(device_id));
+
+    static constexpr const unsigned int items_per_block = block_size * items_per_thread;
+    hipStream_t                         stream          = 0; // default
+
+    if(!is_buildable(block_size, items_per_thread, algo))
+    {
+        GTEST_SKIP();
+    }
+
+    for(size_t seed_index = 0; seed_index < number_of_runs; seed_index++)
+    {
+        unsigned int seed_value
+            = seed_index < random_seeds_count ? rand() : seeds[seed_index - random_seeds_count];
+        SCOPED_TRACE(testing::Message() << "with seed = " << seed_value);
+
+        size_t grid_size = 4; // test on 5 blocks
+        size_t size = items_per_block * grid_size; 
+        SCOPED_TRACE(testing::Message() << "with size = " << size);
+        // Generate data
+        std::vector<key_type> output
+            = test_utils::get_random_data_wrapped<key_type>(size, -100, 100, seed_value);
+
+        // Calculate expected results on host
+        std::vector<key_type> expected(output);
+        binary_op_type        binary_op;
+        for(size_t i = 0; i < grid_size; i++)
+        {
+            std::sort(expected.begin() + (i * items_per_block),
+                        expected.begin() + std::min(size, ((i + 1) * items_per_block)),
+                        binary_op);
+        }
+
+        // Preparing device
+        common::device_ptr<key_type> device_key_output(output);
+
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(sort_keys_kernel_no_size<block_size,
+                                                            items_per_thread,
+                                                            key_type*,
+                                                            algo,
+                                                            binary_op_type>),
+                            dim3(grid_size),
+                            dim3(block_size),
+                            0,
+                            stream,
+                            device_key_output.get()
+                        );
+
+        // Reading results back
+        output = device_key_output.load();
+
+        test_utils::assert_eq(output, expected);
+    }
+}
+
 #endif // TEST_ROCPRIM_TEST_BLOCK_SORT_HPP_
 // This file is included multiple times in the test_block_sort_[algo].cpp file, because
 // the test definitions below this header guard need to be compiled for each test suites:
@@ -442,4 +508,26 @@ typed_test_def(suite_name, name_suffix, SortKeyValueDesc)
     static constexpr const unsigned int                  block_size       = TestFixture::block_size;
     static constexpr const unsigned int                  items_per_thread = 1;
     TestSortKeyValue<block_size, items_per_thread, key_type, value_type, algo, binary_op_type>();
+}
+
+typed_test_def(suite_name, name_suffix, SortKeyNoSize)
+{
+    using key_type                                            = typename TestFixture::key_type;
+    using value_type                                          = typename TestFixture::value_type;
+    using binary_op_type                                      = typename rocprim::greater<key_type>;
+    static constexpr const rocprim::block_sort_algorithm algo = TEST_BLOCK_SORT_ALGORITHM;
+    static constexpr const unsigned int                  block_size       = TestFixture::block_size;
+    static constexpr const unsigned int                  items_per_thread = 1;
+    TestSortKeyNoSize<block_size, items_per_thread, key_type, value_type, algo, binary_op_type>();
+}
+
+typed_test_def(suite_name, name_suffix, SortKeyNoSizeMultipleItemsPerThread)
+{
+    using key_type                                            = typename TestFixture::key_type;
+    using value_type                                          = typename TestFixture::value_type;
+    using binary_op_type                                      = typename rocprim::greater<key_type>;
+    static constexpr const rocprim::block_sort_algorithm algo = TEST_BLOCK_SORT_ALGORITHM;
+    static constexpr const unsigned int                  block_size       = TestFixture::block_size;
+    static constexpr const unsigned int                  items_per_thread = 5;
+    TestSortKeyNoSize<block_size, items_per_thread, key_type, value_type, algo, binary_op_type>();
 }
