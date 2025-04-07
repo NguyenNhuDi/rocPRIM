@@ -31,6 +31,7 @@ typed_test_suite_def(suite_name, name_suffix, block_params);
     #define TEST_ROCPRIM_TEST_BLOCK_STORE_HPP_
 
 template<
+    bool use_size,
     unsigned int block_size,
     unsigned int items_per_thread,
     typename DataType,
@@ -38,87 +39,87 @@ template<
 >
 void TestStore(){
 
-    if(is_buildable(block_size, items_per_thread, algorithm)){
-        constexpr size_t items_per_block = block_size * items_per_thread;
-        constexpr size_t grid_size = 120;
-        constexpr size_t size = items_per_block * grid_size;
-        
+    constexpr size_t items_per_block = block_size * items_per_thread;
+    constexpr size_t grid_size = 120;
+    constexpr size_t size = items_per_block * grid_size;
+    
 
-        std::vector<DataType> host_input(size);
-        common::device_ptr<DataType> device_output(host_input);
-        
-        for(size_t i = 0; i < size; i++) host_input[i] = static_cast<DataType>(i);
-        common::device_ptr<DataType> device_input(host_input);
+    std::vector<DataType> host_input(size);
+    common::device_ptr<DataType> device_output(host_input);
+    
+    for(size_t i = 0; i < size; i++) host_input[i] = static_cast<DataType>(i);
+    common::device_ptr<DataType> device_input(host_input);
 
-        hipLaunchKernelGGL(HIP_KERNEL_NAME(store_kernel<
-                                            block_size,
-                                            items_per_thread,
-                                            DataType,
-                                            algorithm
-                                        >),
-            dim3(grid_size),
-            dim3(block_size),
-            0,
-            0,
-            device_input.get(),
-            device_output.get()
-        );
+    hipLaunchKernelGGL(HIP_KERNEL_NAME(store_kernel<
+                                        use_size,
+                                        block_size,
+                                        items_per_thread,
+                                        DataType,
+                                        algorithm
+                                    >),
+        dim3(grid_size),
+        dim3(block_size),
+        0,
+        0,
+        device_input.get(),
+        device_output.get()
+    );
 
-        HIP_CHECK(hipGetLastError());
-        std::vector<DataType> host_output = device_output.load();
-        test_utils::assert_eq(host_input, host_output);
-    }
+    HIP_CHECK(hipGetLastError());
+    std::vector<DataType> host_output = device_output.load();
+    test_utils::assert_eq(host_input, host_output);
 }
 
 template<
+    bool use_size,
     unsigned int block_size,
     unsigned int items_per_thread,
     typename DataType,
     rocprim::block_store_method algorithm
 >
-void TestStoreWithSize(){
+void TestStoreWithStorage(){
 
-    if(is_buildable(block_size, items_per_thread, algorithm)){
-        constexpr size_t items_per_block = block_size * items_per_thread;
-        constexpr size_t grid_size = 120;
-        constexpr size_t size = items_per_block * grid_size;
-        
+    constexpr size_t items_per_block = block_size * items_per_thread;
+    constexpr size_t grid_size = 120;
+    constexpr size_t size = items_per_block * grid_size;
+    
 
-        std::vector<DataType> host_input(size);
-        common::device_ptr<DataType> device_output(host_input);
-        
-        for(size_t i = 0; i < size; i++) host_input[i] = static_cast<DataType>(i);
-        common::device_ptr<DataType> device_input(host_input);
+    std::vector<DataType> host_input(size);
+    common::device_ptr<DataType> device_output(host_input);
+    
+    for(size_t i = 0; i < size; i++) host_input[i] = static_cast<DataType>(i);
+    common::device_ptr<DataType> device_input(host_input);
 
-        hipLaunchKernelGGL(HIP_KERNEL_NAME(store_kernel_with_size<
-                                            block_size,
-                                            items_per_thread,
-                                            DataType,
-                                            algorithm
-                                        >),
-            dim3(grid_size),
-            dim3(block_size),
-            0,
-            0,
-            device_input.get(),
-            device_output.get()
-        );
+    hipLaunchKernelGGL(HIP_KERNEL_NAME(store_kernel_with_storage<
+                                        use_size,
+                                        block_size,
+                                        items_per_thread,
+                                        DataType,
+                                        algorithm
+                                    >),
+        dim3(grid_size),
+        dim3(block_size),
+        0,
+        0,
+        device_input.get(),
+        device_output.get()
+    );
 
-        HIP_CHECK(hipGetLastError());
-        std::vector<DataType> host_output = device_output.load();
-        test_utils::assert_eq(host_input, host_output);
-    }
+    HIP_CHECK(hipGetLastError());
+    std::vector<DataType> host_output = device_output.load();
+    test_utils::assert_eq(host_input, host_output);
 }
 
-
 #endif
+
 typed_test_def(suite_name, name_suffix, Store)
 {
     using DataType                                                      = typename TestFixture::DataType;
     static constexpr const rocprim::block_store_method algo             = TEST_BLOCK_STORE_ALGORITHM;
     static constexpr const unsigned int                block_size       = TestFixture::block_size;
     static constexpr const unsigned int                items_per_thread = 1;
-    TestStore<block_size, items_per_thread, DataType, algo>();
+    static constexpr const bool                        use_size = false;
+    TestStore<use_size, block_size, items_per_thread, DataType, algo>();
 }
 
 typed_test_def(suite_name, name_suffix, StoreMultipleItemsPerThread)
@@ -127,7 +128,8 @@ typed_test_def(suite_name, name_suffix, StoreMultipleItemsPerThread)
     static constexpr const rocprim::block_store_method algo             = TEST_BLOCK_STORE_ALGORITHM;
     static constexpr const unsigned int                block_size       = TestFixture::block_size;
     static constexpr const unsigned int                items_per_thread = 4;
-    TestStore<block_size, items_per_thread, DataType, algo>();
+    static constexpr const bool                        use_size = false;
+    TestStore<use_size, block_size, items_per_thread, DataType, algo>();
 }
 
 typed_test_def(suite_name, name_suffix, StoreWithSize)
@@ -136,7 +138,8 @@ typed_test_def(suite_name, name_suffix, StoreWithSize)
     static constexpr const rocprim::block_store_method algo             = TEST_BLOCK_STORE_ALGORITHM;
     static constexpr const unsigned int                block_size       = TestFixture::block_size;
     static constexpr const unsigned int                items_per_thread = 1;
-    TestStoreWithSize<block_size, items_per_thread, DataType, algo>();
+    static constexpr const bool                        use_size = true;
+    TestStore<use_size, block_size, items_per_thread, DataType, algo>();
 }
 
 typed_test_def(suite_name, name_suffix, StoreWithSizeMultipleItemsPerThread)
@@ -145,5 +148,46 @@ typed_test_def(suite_name, name_suffix, StoreWithSizeMultipleItemsPerThread)
     static constexpr const rocprim::block_store_method algo             = TEST_BLOCK_STORE_ALGORITHM;
     static constexpr const unsigned int                block_size       = TestFixture::block_size;
     static constexpr const unsigned int                items_per_thread = 4;
-    TestStoreWithSize<block_size, items_per_thread, DataType, algo>();
+    static constexpr const bool                        use_size = true;
+    TestStore<use_size, block_size, items_per_thread, DataType, algo>();
+}
+
+typed_test_def(suite_name, name_suffix, StoreWithStorage)
+{
+    using DataType                                                      = typename TestFixture::DataType;
+    static constexpr const rocprim::block_store_method algo             = TEST_BLOCK_STORE_ALGORITHM;
+    static constexpr const unsigned int                block_size       = TestFixture::block_size;
+    static constexpr const unsigned int                items_per_thread = 1;
+    static constexpr const bool                        use_size = false;
+    TestStoreWithStorage<use_size, block_size, items_per_thread, DataType, algo>();
+}
+
+typed_test_def(suite_name, name_suffix, StoreMultipleItemsPerThreadWithStorage)
+{
+    using DataType                                                      = typename TestFixture::DataType;
+    static constexpr const rocprim::block_store_method algo             = TEST_BLOCK_STORE_ALGORITHM;
+    static constexpr const unsigned int                block_size       = TestFixture::block_size;
+    static constexpr const unsigned int                items_per_thread = 4;
+    static constexpr const bool                        use_size = false;
+    TestStoreWithStorage<use_size, block_size, items_per_thread, DataType, algo>();
+}
+
+typed_test_def(suite_name, name_suffix, StoreWithSizeWithStorage)
+{
+    using DataType                                                      = typename TestFixture::DataType;
+    static constexpr const rocprim::block_store_method algo             = TEST_BLOCK_STORE_ALGORITHM;
+    static constexpr const unsigned int                block_size       = TestFixture::block_size;
+    static constexpr const unsigned int                items_per_thread = 1;
+    static constexpr const bool                        use_size = true;
+    TestStoreWithStorage<use_size, block_size, items_per_thread, DataType, algo>();
+}
+
+typed_test_def(suite_name, name_suffix, StoreWithSizeMultipleItemsPerThreadWithStorage)
+{
+    using DataType                                                      = typename TestFixture::DataType;
+    static constexpr const rocprim::block_store_method algo             = TEST_BLOCK_STORE_ALGORITHM;
+    static constexpr const unsigned int                block_size       = TestFixture::block_size;
+    static constexpr const unsigned int                items_per_thread = 4;
+    static constexpr const bool                        use_size = true;
+    TestStoreWithStorage<use_size, block_size, items_per_thread, DataType, algo>();
 }
