@@ -1,58 +1,127 @@
 #ifndef TEST_BLOCK_STORE_KERNELS_HPP_
 #define TEST_BLOCK_STORE_KERNELS_HPP_
 
-constexpr bool is_buildable(unsigned int                BlockSize,
-    unsigned int                ItemsPerThread,
-    rocprim::block_store_method algorithm)
+
+
+constexpr bool is_buildable(unsigned int BlockSize,
+                            unsigned int ItemsPerThread,
+                            rocprim::block_store_method algorithm
+                        )
 {
     switch(algorithm)
     {
         case rocprim::block_store_method::block_store_direct: 
         case rocprim::block_store_method::block_store_striped: 
+        case rocprim::block_store_method::block_store_transpose:
             return true;
         case rocprim::block_store_method::block_store_vectorize:
             return (ItemsPerThread % 2 == 0) && ((BlockSize * ItemsPerThread) % 4 == 0);
+        case rocprim::block_store_method::block_store_warp_transpose:
+            return BlockSize % rocprim::device_warp_size() == 0;
     }
     return false;
 }
+
 template<
     unsigned int BlockSize,
     unsigned int ItemsPerThread,
     typename DataType,
-    class OutputIterator,
     rocprim::block_store_method algorithm,
-    std::enable_if_t<(ItemsPerThread == 1u && is_buildable(BlockSize, ItemsPerThread, algorithm)),
+    std::enable_if_t<(is_buildable(BlockSize, ItemsPerThread, algorithm)),
         int> = 0
     >
-    __global__ __launch_bounds__(BlockSize) void store_kernel(DataType * input){
-        using bstore_type = rocprim::block_store<DataType, BlockSize, ItemsPerThread, algorithm>;
+__global__ __launch_bounds__(BlockSize) void store_kernel(DataType * input, DataType * output){
+    using bstore_type = rocprim::block_store<DataType, BlockSize, ItemsPerThread, algorithm>;
 
-        static constexpr const unsigned int ItemsPerBlock = ItemsPerThread * BlockSize;
-        const unsigned int                  block_offset  = blockIdx.x * ItemsPerBlock;
-        const unsigned int                  index         = block_offset + (threadIdx.x * ItemsPerThread);
+    static constexpr const unsigned int ItemsPerBlock = ItemsPerThread * BlockSize;
+    const unsigned int                  block_offset  = blockIdx.x * ItemsPerBlock;
+    const unsigned int                  index         = block_offset + (threadIdx.x * ItemsPerThread);
 
-        DataType temp[ItemsPerThread];
-        DataType storage[ItemsPerThread];
+    DataType temp[ItemsPerThread]; 
+    __shared__ DataType storage[ItemsPerBlock]; 
 
-        for(size_t i = 0; i < ItemsPerThread; i++)
-            temp[i] = input[index + i];
-
-        bstore_type().store(temp, storage);
-
-        for(size_t i = 0; i < ItemsPerThread; i++)
-            input[index + i] = storage[i];
-
+    for(unsigned int i = 0; i < ItemsPerThread; i++){
+        switch(algorithm){
+            case rocprim::block_store_method::block_store_direct:
+            case rocprim::block_store_method::block_store_transpose:
+            case rocprim::block_store_method::block_store_vectorize:
+                temp[i] = input[index + i];
+            break;
+            
+            case rocprim::block_store_method::block_store_striped:
+                temp[i] = input[block_offset + (threadIdx.x + i * BlockSize)];
+                break;
+        }
     }
 
-    template<
+    bstore_type().store(storage, temp);
+
+    __syncthreads();
+
+    for(unsigned int i = 0; i < ItemsPerThread; i++){
+        output[index + i] = storage[threadIdx.x * ItemsPerThread + i];
+    }
+}
+
+template<
     unsigned int BlockSize,
     unsigned int ItemsPerThread,
     typename DataType,
-    class OutputIterator,
     rocprim::block_store_method algorithm,
-    std::enable_if_t<!(ItemsPerThread == 1u && is_buildable(BlockSize, ItemsPerThread, algorithm)),
+    std::enable_if_t<!(is_buildable(BlockSize, ItemsPerThread, algorithm)),
         int> = 0
     >
-    __global__ __launch_bounds__(BlockSize) void store_kernel(DataType * input){}
+__global__ __launch_bounds__(BlockSize) void store_kernel(DataType * input, DataType * output){}
+
+template<
+    unsigned int BlockSize,
+    unsigned int ItemsPerThread,
+    typename DataType,
+    rocprim::block_store_method algorithm,
+    std::enable_if_t<(is_buildable(BlockSize, ItemsPerThread, algorithm)),
+        int> = 0
+    >
+__global__ __launch_bounds__(BlockSize) void store_kernel_with_size(DataType * input, DataType * output){
+    using bstore_type = rocprim::block_store<DataType, BlockSize, ItemsPerThread, algorithm>;
+
+    static constexpr const unsigned int ItemsPerBlock = ItemsPerThread * BlockSize;
+    const unsigned int                  block_offset  = blockIdx.x * ItemsPerBlock;
+    const unsigned int                  index         = block_offset + (threadIdx.x * ItemsPerThread);
+
+    DataType temp[ItemsPerThread]; 
+    __shared__ DataType storage[ItemsPerBlock]; 
+
+    for(unsigned int i = 0; i < ItemsPerThread; i++){
+        switch(algorithm){
+            case rocprim::block_store_method::block_store_direct:
+            case rocprim::block_store_method::block_store_transpose:
+            case rocprim::block_store_method::block_store_vectorize:
+                temp[i] = input[index + i];
+            break;
+            
+            case rocprim::block_store_method::block_store_striped:
+                temp[i] = input[block_offset + (threadIdx.x + i * BlockSize)];
+                break;
+        }
+    }
+
+    bstore_type().store(storage, temp, ItemsPerBlock);
+
+    __syncthreads();
+
+    for(unsigned int i = 0; i < ItemsPerThread; i++){
+        output[index + i] = storage[threadIdx.x * ItemsPerThread + i];
+    }
+}
+
+template<
+    unsigned int BlockSize,
+    unsigned int ItemsPerThread,
+    typename DataType,
+    rocprim::block_store_method algorithm,
+    std::enable_if_t<!(is_buildable(BlockSize, ItemsPerThread, algorithm)),
+        int> = 0
+    >
+__global__ __launch_bounds__(BlockSize) void store_kernel_with_size(DataType * input, DataType * output){}
 
 #endif

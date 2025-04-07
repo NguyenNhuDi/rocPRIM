@@ -490,4 +490,3 @@ __global__ __launch_bounds__(BlockSize) void sort_pairs_kernel_with_size(key_typ
     value_type* values, const unsigned int size)
 {}
 #endif // TEST_BLOCK_SORT_KERNELS_HPP_
-FD
