@@ -559,6 +559,100 @@ template<
     rocprim::block_store_method StoreMethod,
     unsigned int BlockSize,
     unsigned int ItemsPerThread,
+    std::enable_if_t<(enable_block_load_store_test<LoadMethod, StoreMethod, BlockSize>::value), int> = 0
+>
+__global__
+__launch_bounds__(BlockSize)
+void load_store_storage_kernel(Type* device_input, Type* device_output)
+{
+    Type _items[ItemsPerThread];
+    auto offset = blockIdx.x * BlockSize * ItemsPerThread;
+    using impl  = get_block_load_store<Type, LoadMethod, StoreMethod, BlockSize, ItemsPerThread>;
+    typename impl::block_load  load;
+    typename impl::block_store store;
+
+    ROCPRIM_SHARED_MEMORY typename impl::block_load::storage_type load_storage;
+    ROCPRIM_SHARED_MEMORY typename impl::block_store::storage_type store_storage;
+
+    load.load(device_input + offset, _items, load_storage);
+    store.store(device_output + offset, _items, store_storage);
+}
+
+// The default kernel in case load store storage kernel fails to build
+template<
+    class Type,
+    rocprim::block_load_method LoadMethod,
+    rocprim::block_store_method StoreMethod,
+    unsigned int BlockSize,
+    unsigned int ItemsPerThread,
+    std::enable_if_t<!(enable_block_load_store_test<LoadMethod, StoreMethod, BlockSize>::value), int> = 0
+>
+__global__
+__launch_bounds__(BlockSize)
+void load_store_storage_kernel(Type* device_input, Type* device_output)
+{
+    Type _items[ItemsPerThread];
+    auto offset = blockIdx.x * BlockSize * ItemsPerThread;
+    using impl  = get_block_load_store<Type, LoadMethod, StoreMethod, BlockSize, ItemsPerThread>;
+    typename impl::block_load  load;
+    typename impl::block_store store;
+    load.load(device_input + offset, _items);
+    store.store(device_output + offset, _items);
+}
+
+template<
+    class Type,
+    rocprim::block_load_method LoadMethod,
+    rocprim::block_store_method StoreMethod,
+    unsigned int BlockSize,
+    unsigned int ItemsPerThread,
+    std::enable_if_t<(enable_block_load_store_test<LoadMethod, StoreMethod, BlockSize>::value), int> = 0
+>
+__global__
+__launch_bounds__(BlockSize)
+void load_store_storage_valid_kernel(Type* device_input, Type* device_output, size_t valid)
+{
+    Type _items[ItemsPerThread];
+    auto offset = blockIdx.x * BlockSize * ItemsPerThread;
+    using impl  = get_block_load_store<Type, LoadMethod, StoreMethod, BlockSize, ItemsPerThread>;
+    typename impl::block_load  load;
+    typename impl::block_store store;
+
+    ROCPRIM_SHARED_MEMORY typename impl::block_load::storage_type load_storage;
+    ROCPRIM_SHARED_MEMORY typename impl::block_store::storage_type store_storage;
+
+    load.load(device_input + offset, _items, (unsigned int)valid, load_storage);
+    store.store(device_output + offset, _items, (unsigned int)valid, store_storage);
+}
+
+// The default kernel in case load store storage valid kernel fails to build
+template<
+    class Type,
+    rocprim::block_load_method LoadMethod,
+    rocprim::block_store_method StoreMethod,
+    unsigned int BlockSize,
+    unsigned int ItemsPerThread,
+    std::enable_if_t<!(enable_block_load_store_test<LoadMethod, StoreMethod, BlockSize>::value), int> = 0
+>
+__global__
+__launch_bounds__(BlockSize)
+void load_store_storage_valid_kernel(Type* device_input, Type* device_output, size_t valid)
+{
+    Type _items[ItemsPerThread];
+    auto offset = blockIdx.x * BlockSize * ItemsPerThread;
+    using impl  = get_block_load_store<Type, LoadMethod, StoreMethod, BlockSize, ItemsPerThread>;
+    typename impl::block_load  load;
+    typename impl::block_store store;
+    load.load(device_input + offset, _items, (unsigned int)valid);
+    store.store(device_output + offset, _items, (unsigned int)valid);
+}
+
+template<
+    class Type,
+    rocprim::block_load_method LoadMethod,
+    rocprim::block_store_method StoreMethod,
+    unsigned int BlockSize,
+    unsigned int ItemsPerThread,
     class Def
 >
 __global__
