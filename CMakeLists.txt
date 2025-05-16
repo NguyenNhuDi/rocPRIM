@@ -73,7 +73,7 @@ cmake_dependent_option(BUILD_BENCHMARK "Build benchmarks" OFF "NOT ONLY_INSTALL"
 cmake_dependent_option(BUILD_EXAMPLE "Build examples" OFF "NOT ONLY_INSTALL" OFF)
 option(BUILD_NAIVE_BENCHMARK "Build naive benchmarks" OFF)
 cmake_dependent_option(BUILD_DOCS "Build documentation (requires sphinx)" OFF "NOT ONLY_INSTALL" OFF)
-option(BUILD_CODE_COVERAGE "Build with code coverage enabled" OFF)
+option(CODE_COVERAGE "Build with code coverage enabled" OFF)
 option(ROCPRIM_INSTALL "Enable installation of rocPRIM (projects embedding rocPRIM may want to turn this OFF)" ON)
 option(ROCPRIM_ENABLE_ASSERTS "Enable asserts in release build)" OFF)
 
@@ -100,7 +100,7 @@ list(APPEND CMAKE_MODULE_PATH
 )
 
 # Set a default build type if none was specified
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES  AND NOT CODE_COVERAGE)
   message(STATUS "Setting build type to 'Release' as none was specified.")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "" "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
@@ -177,22 +177,17 @@ if(ROCPRIM_INSTALL AND BUILD_FILE_REORG_BACKWARD_COMPATIBILITY AND NOT WIN32)
   )
 endif()
 
-if(BUILD_CODE_COVERAGE)
-  add_compile_options(-fprofile-arcs -ftest-coverage)
-  add_link_options(--coverage)
-endif()
-
 # Setup VERSION
 set(VERSION_STRING "3.5.0")
 rocm_setup_version(VERSION ${VERSION_STRING})
 math(EXPR rocprim_VERSION_NUMBER "${rocprim_VERSION_MAJOR} * 100000 + ${rocprim_VERSION_MINOR} * 100 + ${rocprim_VERSION_PATCH}")
 
-# Print configuration summary
-include(cmake/Summary.cmake)
-print_configuration_summary()
-
 # rocPRIM library
 add_subdirectory(rocprim)
+
+if(CODE_COVERAGE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -fprofile-instr-generate -fcoverage-mapping")
+endif()
 
 if(ROCPRIM_PROJECT_IS_TOP_LEVEL AND (BUILD_TEST OR BUILD_BENCHMARK))
   rocm_package_setup_component(clients)
@@ -254,43 +249,47 @@ if (ROCPRIM_PROJECT_IS_TOP_LEVEL)
   )
 endif()
 
-#
-# ADDITIONAL TARGETS FOR CODE COVERAGE
-#
-if(BUILD_CODE_COVERAGE)
-  #
-  # > make coverage_cleanup (clean coverage related files.)
-  # > # run your tests
-  #  > make coverage (generate html documentation)
-  #
+# #
+# # ADDITIONAL TARGETS FOR CODE COVERAGE
+# #
+# if(CODE_COVERAGE)
+#   #
+#   # > make coverage_cleanup (clean coverage related files.)
+#   # > # run your tests
+#   #  > make coverage (generate html documentation)
+#   #
 
-  #
-  # Prepare coverage output
-  # This little script is generated because the option '--gcov-tool <program name>' of lcov cannot take arguments.
-  #
-  add_custom_target(coverage
-    DEPENDS rocprim
-    COMMAND mkdir -p lcoverage
-    COMMAND echo "\\#!/bin/bash" > llvm-gcov.sh
-    COMMAND echo "\\# THIS FILE HAS BEEN GENERATED" >> llvm-gcov.sh
-    COMMAND printf "exec /opt/rocm/llvm/bin/llvm-cov gcov $$\\@" >> llvm-gcov.sh
-    COMMAND chmod +x llvm-gcov.sh
-    )
+#   #
+#   # Prepare coverage output
+#   # This little script is generated because the option '--gcov-tool <program name>' of lcov cannot take arguments.
+#   #
+#   add_custom_target(coverage
+#     DEPENDS rocprim
+#     COMMAND mkdir -p lcoverage
+#     COMMAND echo "\\#!/bin/bash" > llvm-gcov.sh
+#     COMMAND echo "\\# THIS FILE HAS BEEN GENERATED" >> llvm-gcov.sh
+#     COMMAND printf "exec /opt/rocm/llvm/bin/llvm-cov gcov $$\\@" >> llvm-gcov.sh
+#     COMMAND chmod +x llvm-gcov.sh
+#     )
 
-  #
-  # Generate coverage output.
-  #
-  add_custom_command(TARGET coverage
-    COMMAND lcov --directory . --base-directory . --gcov-tool ${CMAKE_BINARY_DIR}/llvm-gcov.sh --capture -o lcoverage/raw_main_coverage.info
-    COMMAND lcov --remove lcoverage/raw_main_coverage.info "'/opt/*'" "'/usr/*'" -o lcoverage/main_coverage.info
-    COMMAND genhtml lcoverage/main_coverage.info --output-directory lcoverage
-    )
+#   #
+#   # Generate coverage output.
+#   #
+#   add_custom_command(TARGET coverage
+#     COMMAND lcov --directory . --base-directory . --gcov-tool ${CMAKE_BINARY_DIR}/llvm-gcov.sh --capture -o lcoverage/raw_main_coverage.info
+#     COMMAND lcov --remove lcoverage/raw_main_coverage.info "'/opt/*'" "'/usr/*'" -o lcoverage/main_coverage.info
+#     COMMAND genhtml lcoverage/main_coverage.info --output-directory lcoverage
+#     )
 
-  #
-  # Coverage cleanup
-  #
-  add_custom_target(coverage_cleanup
-    COMMAND find ${CMAKE_BINARY_DIR} -name *.gcda -delete
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-endif()
+#   #
+#   # Coverage cleanup
+#   #
+#   add_custom_target(coverage_cleanup
+#     COMMAND find ${CMAKE_BINARY_DIR} -name *.gcda -delete
+#     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+#     )
+# endif()
+
+# Print configuration summary
+include(cmake/Summary.cmake)
+print_configuration_summary()
